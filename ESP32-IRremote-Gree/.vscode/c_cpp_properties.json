@@ -21,7 +21,8 @@
                     "${workspaceFolder}"
                 ],
                 "limitSymbolsToIncludedHeaders": false
-            }
+            },
+            "compileCommands": "${workspaceFolder}/build/bootloader/compile_commands.json"
         }
     ],
     "version": 4
