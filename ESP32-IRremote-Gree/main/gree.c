@@ -6,7 +6,7 @@ static const char *TAG = "GREE";
 
 int generate_gree_item(uint8_t cmd[], rmt_item32_t *item, uint8_t invert)
 {
-    if (item = calloc(70, sizeof(rmt_item32_t)))
+    if ((item = calloc(70, sizeof(rmt_item32_t))))
     {
         //起始码
         item[0].duration0=9000;
@@ -26,13 +26,14 @@ int generate_gree_item(uint8_t cmd[], rmt_item32_t *item, uint8_t invert)
         for(int i=32;i<67;i++){
             level_implement(cmd[i],&item[i+2],invert);
         }
-
+        return 68;
     }
     else
     {
         ESP_LOGE(TAG, "ERROR allocat memory for cmd items.");
         ESP_ERROR_CHECK(ESP_FAIL);
     }
+    return -1;
 }
 
 void level_implement(uint8_t level, rmt_item32_t *item, uint8_t invert)
