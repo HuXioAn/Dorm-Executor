@@ -17,7 +17,7 @@
 
 
 
-int generate_gree_item(uint8_t cmd[],rmt_item32_t* item,uint8_t invert);
+int generate_gree_item(uint8_t cmd[],rmt_item32_t** items,uint8_t invert);
 
 void level_implement(uint8_t level,rmt_item32_t* item,uint8_t invert);
 
