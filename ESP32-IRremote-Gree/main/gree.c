@@ -62,20 +62,20 @@ int generate_gree_item(uint8_t cmd[], rmt_item32_t **items, uint8_t invert)
         item[140].level0=!!invert;
         item[140].duration1=0;
         item[140].level1=!invert;
-        //77ms
-        item[141].duration0=30000;
-        item[141].level0=!invert;
-        item[141].duration1=30000;
-        item[141].level1=!invert;       
+        // //77ms
+        // item[141].duration0=30000;
+        // item[141].level0=!invert;
+        // item[141].duration1=30000;
+        // item[141].level1=!invert;       
         
-        for(int i=134;i<177;i++){
-            level_implement(cmd[i],&item[i+8],invert);
-        }
+        // for(int i=134;i<177;i++){
+        //     level_implement(cmd[i],&item[i+8],invert);
+        // }
 
-        item[185].duration0=600;
-        item[185].level0=!!invert;
-        item[185].duration1=0;
-        item[185].level1=!invert; 
+        // item[185].duration0=600;
+        // item[185].level0=!!invert;
+        // item[185].duration1=0;
+        // item[185].level1=!invert; 
 
 
         *items=item;
