@@ -1,6 +1,35 @@
 #include "gree.h"
 #include "stdlib.h"
 #include "esp_log.h"
+#include "string.h"
+
+
+static const uint8_t template[CMD_LENGTH*2] = {   
+
+                            1,0,0,1,0,0,0,0,1,
+                            0,0,1,0,0,0,0,0,0,
+                            0,0,0,1,0,0,0,0,0,
+                            0,1,0,1,0,0,1,0,
+                            //20ms
+                            0,0,0,0,0,0,0,0,0,
+							0,0,0,0,0,0,0,0,0,
+                            0,0,0,0,0,0,0,0,0,
+                            0,0,0,1,1,
+                            //40ms
+                            1,0,0,1,0,0,0,0,1,
+                            0,0,1,0,0,0,0,0,0,
+                            0,0,0,1,0,0,0,0,0,
+                            0,1,1,1,0,0,1,0,
+                            //20ms
+                            0,0,0,0,0,0,0,0,0,
+							0,0,0,0,0,0,0,0,0,
+                            0,0,0,0,0,0,0,0,0,
+                            0,0,0,1,1,
+
+                            
+                            
+                            }; 
+
 
 static const char *TAG = "GREE";
 
@@ -89,7 +118,7 @@ int generate_gree_item(uint8_t cmd[], rmt_item32_t **items, uint8_t invert)
     return -1;
 }
 
-void level_implement(uint8_t level, rmt_item32_t *item, uint8_t invert)
+inline void level_implement(uint8_t level, rmt_item32_t *item, uint8_t invert)
 {
     if (0 == level)
     {
@@ -107,4 +136,43 @@ void level_implement(uint8_t level, rmt_item32_t *item, uint8_t invert)
 
 
 
+void generate_gree_cmd(uint8_t* cmd,uint8_t temp,int power){
+    
+    memcpy(cmd,template,CMD_LENGTH*2*sizeof(uint8_t));
+    //power
+    cmd[CMD_SWITCH_BIT]=!!power;
+    cmd[CMD_SWITCH_BIT+CMD_LENGTH]=!!power;
+
+    //temperature
+    if(temp<31 && temp>15){
+        temp= (temp-16)&0x0f;
+        // cmd[CMD_TEMP_BIT]=temp&0x01;
+        // cmd[CMD_TEMP_BIT+1]=(temp&0x02)>>1;
+        // cmd[CMD_TEMP_BIT+2]=(temp&0x04)>>2;
+        // cmd[CMD_TEMP_BIT+3]=(temp&0x08)>>3;
+
+        for(int i=0;i<4;i++){
+            cmd[CMD_TEMP_BIT+i]=(temp&0x01<<i)>>i;
+            cmd[CMD_TEMP_BIT+CMD_LENGTH+i]=(temp&0x01<<i)>>i;
+        }
+
+
+        //校验
+        uint8_t verify = (uint8_t)0b0011+temp;
+        verify&=0x0f;
+        if(!power)verify^=0x08;
+        for(int i=0;i<4;i++){
+            cmd[CMD_VERI_BIT+i]=(verify&0x01<<i)>>i;
+            cmd[CMD_VERI_BIT+CMD_LENGTH+i]=(verify&0x01<<i)>>i;
+        }
+
+
+
+    }else{
+        ESP_LOGE(TAG,"Improper temperature.");
+        abort();
+    }
+
+
+}
 

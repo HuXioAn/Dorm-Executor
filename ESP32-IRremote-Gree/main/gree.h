@@ -15,13 +15,16 @@
 #define RMT_CONNECT_LEVEL_2 20000
 
 
-
+#define CMD_LENGTH 67
+#define CMD_SWITCH_BIT 3
+#define CMD_TEMP_BIT 8
+#define CMD_VERI_BIT 63
 
 int generate_gree_item(uint8_t cmd[],rmt_item32_t** items,uint8_t invert);
 
 void level_implement(uint8_t level,rmt_item32_t* item,uint8_t invert);
 
-
+void generate_gree_cmd(uint8_t* cmd,uint8_t temp,int power);
 
 
 #endif
