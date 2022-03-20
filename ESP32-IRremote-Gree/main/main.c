@@ -89,6 +89,7 @@ void app_main(void)
     ESP_LOGI(TAG,"items generated.\n");
     rmt_config_t rmt_tx_config = RMT_DEFAULT_CONFIG_TX(RMT_TX_GPIO,RMT_CHANNEL_0);
     rmt_tx_config.tx_config.carrier_en = true;
+    rmt_tx_config.tx_config.carrier_duty_percent = 50;
     rmt_config(&rmt_tx_config);
     rmt_driver_install(RMT_CHANNEL_0, 0, 0);
 
