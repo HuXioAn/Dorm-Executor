@@ -15,20 +15,25 @@ int generate_gree_item(uint8_t cmd[], rmt_item32_t **items, uint8_t invert)
         item[0].duration1=4500;
         item[0].level1=!invert;
 
-        for(int i=0;i<32;i++){
+        for(int i=0;i<35;i++){
             level_implement(cmd[i],&item[i+1],invert);
         }
         //连接码
-        item[33].duration0=600;
-        item[33].level0=!!invert;
-        item[33].duration1=20000;
-        item[33].level1=!invert;
+        item[36].duration0=600;
+        item[36].level0=!!invert;
+        item[36].duration1=20000;
+        item[36].level1=!invert;
 
-        for(int i=32;i<67;i++){
+        for(int i=35;i<67;i++){
             level_implement(cmd[i],&item[i+2],invert);
         }
+        item[69].duration0=600;
+        item[69].level0=!!invert;
+        item[69].duration1=0;
+        item[69].level1=!invert;
+
         *items=item;
-        return 69;
+        return 70;
     }
     else
     {
