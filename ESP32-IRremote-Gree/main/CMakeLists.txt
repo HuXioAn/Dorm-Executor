@@ -1,2 +1,2 @@
-idf_component_register(SRCS "gree.c" "main.c"
+idf_component_register(SRCS "ble.c" "gree.c" "main.c"
                     INCLUDE_DIRS ".")

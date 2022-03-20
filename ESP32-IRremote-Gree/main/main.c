@@ -3,17 +3,20 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "esp_log.h"
 #include "driver/rmt.h"
 #include "gree.h"
+#include "ble.h"
 
 
 static const char *TAG = "ESP32-IR-GREE";
 
-#define RMT_TX_GPIO 4
+
 
 void app_main(void)
 {
+/*
     uint8_t cmd_on[177] = {    1,0,0,1,0,0,0,0,1,
                             0,0,1,0,0,0,0,0,0,
                             0,0,0,1,0,0,0,0,0,
@@ -80,8 +83,8 @@ void app_main(void)
 							1,0,1,0,0,1,0,1,0,0,0,0,0,0,0,0,
 							0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
 							0,1,0}; 
-
-
+*/
+/*
     uint8_t cmd_gen[134]={0};
     rmt_item32_t* items=NULL;
     generate_gree_cmd(cmd_gen,18,1);
@@ -111,5 +114,18 @@ void app_main(void)
     free(items);
     rmt_driver_uninstall(RMT_CHANNEL_0);
     ESP_LOGI(TAG,"RMT DRIVER UNINSTALLED.\n");
+*/
+
+ble_init();
+
+
+
+while(1){
+    vTaskDelay(100);
+}
+
+
 
 }
+
+
