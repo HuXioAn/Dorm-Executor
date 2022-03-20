@@ -60,7 +60,7 @@ int generate_gree_item(uint8_t cmd[], rmt_item32_t **items, uint8_t invert)
         }
         item[140].duration0=600;
         item[140].level0=!!invert;
-        item[140].duration1=17000;
+        item[140].duration1=0;
         item[140].level1=!invert;
         //77ms
         item[141].duration0=30000;
@@ -78,16 +78,8 @@ int generate_gree_item(uint8_t cmd[], rmt_item32_t **items, uint8_t invert)
         item[185].level1=!invert; 
 
 
-
-
-
-
-
-
-
-
         *items=item;
-        return 186;
+        return 141;
     }
     else
     {
