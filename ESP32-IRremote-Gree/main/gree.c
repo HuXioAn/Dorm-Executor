@@ -210,3 +210,23 @@ void send_gree(uint8_t temp,int power,AC_MODE_T mode){
     ESP_LOGI(TAG,"RMT DRIVER UNINSTALLED.\n");
 }
 
+
+
+
+void remote_control(const char * ctr_str){
+    char ctr[20]={0};
+    strcpy(ctr,ctr_str);
+
+    if(ctr[0]=='o'&&ctr[1]=='n'){
+                if(ctr[2]=='C' || ctr[2]=='H'){
+                    int temp = atoi(ctr+3);
+                    AC_MODE_T mode = (ctr[2]=='C')?GREE_AC_MODE_COOL:GREE_AC_MODE_HEAT;
+                    send_gree(temp,1,mode);
+                }else{
+                    int temp = atoi(ctr+2);
+                    send_gree(temp,1,GREE_AC_MODE_COOL);
+                }
+            }else if(ctr[0]=='o'&&ctr[1]=='f'&&ctr[2]=='f'){
+                send_gree(25,0,GREE_AC_MODE_COOL);
+            }
+}

@@ -40,4 +40,6 @@ void generate_gree_cmd(uint8_t* cmd,uint8_t temp,int power,AC_MODE_T mode);
 
 void send_gree(uint8_t temp,int power,AC_MODE_T mode);
 
+void remote_control(const char * ctr_str);
+
 #endif
