@@ -6,9 +6,10 @@
     "esp_log.h": "c",
     "array": "c",
     "string": "c",
-    "string_view": "c"
+    "string_view": "c",
+    "sdkconfig.h": "c"
   },
   "idf.flashType": "UART",
   "idf.port": "/dev/ttyUSB0",
-  "idf.portWin": "COM14"
+  "idf.portWin": "COM15"
 }

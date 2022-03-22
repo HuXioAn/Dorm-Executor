@@ -16,18 +16,28 @@
 
 
 #define CMD_LENGTH 67
+#define CMD_MODE_BIT 0
 #define CMD_SWITCH_BIT 3
 #define CMD_TEMP_BIT 8
+#define CMD_ELEC_HEAT_BIT 23
 #define CMD_VERI_BIT 63
 
 #define RMT_TX_GPIO 4
+
+typedef enum AC_MODE_S {
+    GREE_AC_MODE_COOL=0,
+    GREE_AC_MODE_HEAT
+}AC_MODE_T;
+
+
+
 
 int generate_gree_item(uint8_t cmd[],rmt_item32_t** items,uint8_t invert);
 
 void level_implement(uint8_t level,rmt_item32_t* item,uint8_t invert);
 
-void generate_gree_cmd(uint8_t* cmd,uint8_t temp,int power);
+void generate_gree_cmd(uint8_t* cmd,uint8_t temp,int power,AC_MODE_T mode);
 
-void send_gree(uint8_t temp,int power);
+void send_gree(uint8_t temp,int power,AC_MODE_T mode);
 
 #endif

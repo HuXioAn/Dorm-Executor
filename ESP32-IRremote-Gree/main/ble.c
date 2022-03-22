@@ -336,10 +336,17 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
             memcpy(data,param->write.value,param->write.len);
             data[param->write.len]=0;
             if(data[0]=='o'&&data[1]=='n'){
-                int temp = atoi(data+2);
-                send_gree(temp,1);
+                if(data[2]=='C' || data[2]=='H'){
+                    int temp = atoi(data+3);
+                    AC_MODE_T mode = (data[2]=='C')?GREE_AC_MODE_COOL:GREE_AC_MODE_HEAT;
+                    //ESP_LOGI(GATTS_TAG,"mode:%d,TEMP:%d",mode,temp);
+                    send_gree(temp,1,mode);
+                }else{
+                    int temp = atoi(data+2);
+                    send_gree(temp,1,GREE_AC_MODE_COOL);
+                }
             }else if(data[0]=='o'&&data[1]=='f'&&data[2]=='f'){
-                send_gree(25,0);
+                send_gree(25,0,GREE_AC_MODE_COOL);
             }
 
              if (a_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY){//发送notice

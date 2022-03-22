@@ -140,9 +140,19 @@ inline void level_implement(uint8_t level, rmt_item32_t *item, uint8_t invert)
 
 
 
-void generate_gree_cmd(uint8_t* cmd,uint8_t temp,int power){
-    
+void generate_gree_cmd(uint8_t* cmd,uint8_t temp,int power,AC_MODE_T mode){
+
     memcpy(cmd,template,CMD_LENGTH*2*sizeof(uint8_t));
+
+    //mode,cooling as default
+    if(mode == GREE_AC_MODE_HEAT){
+        cmd[CMD_MODE_BIT]=0;cmd[CMD_MODE_BIT+2]=1;
+        cmd[CMD_MODE_BIT+CMD_LENGTH]=0;cmd[CMD_MODE_BIT+CMD_LENGTH+2]=1;
+
+        cmd[CMD_ELEC_HEAT_BIT]=1;cmd[CMD_ELEC_HEAT_BIT+CMD_LENGTH]=1;//电辅热必须打开
+    }
+
+
     //power
     cmd[CMD_SWITCH_BIT]=!!power;
     cmd[CMD_SWITCH_BIT+CMD_LENGTH]=!!power;
@@ -163,6 +173,7 @@ void generate_gree_cmd(uint8_t* cmd,uint8_t temp,int power){
 
         //校验
         uint8_t verify = (uint8_t)0b0011+temp;
+        if(mode == GREE_AC_MODE_HEAT)verify+=3;
         verify&=0x0f;
         if(!power)verify^=0x08;
         for(int i=0;i<4;i++){
@@ -181,10 +192,10 @@ void generate_gree_cmd(uint8_t* cmd,uint8_t temp,int power){
 }
 
 
-void send_gree(uint8_t temp,int power){
+void send_gree(uint8_t temp,int power,AC_MODE_T mode){
     uint8_t cmd_gen[134]={0};
     rmt_item32_t* items=NULL;
-    generate_gree_cmd(cmd_gen,temp,power);
+    generate_gree_cmd(cmd_gen,temp,power,mode);
     int length = generate_gree_item(cmd_gen,&items,1);
     ESP_LOGI(TAG,"items generated.\n");
     rmt_config_t rmt_tx_config = RMT_DEFAULT_CONFIG_TX(RMT_TX_GPIO,RMT_CHANNEL_0);
