@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "freertos/queue.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -24,7 +25,7 @@
 
 #define GATTS_TAG "GATTS_SERVER"
 
-
+extern QueueHandle_t xQueue_Gree;
 ///Declare the static function
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
@@ -334,9 +335,10 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
             ////////////////////////////////////////////////////////////////
             char data[30];
             memcpy(data,param->write.value,param->write.len);
-            data[param->write.len]=0;
+            data[19]=0;
             
-            remote_control(data);
+            //remote_control(data);
+            xQueueSend(xQueue_Gree,data,1);
 
              if (a_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY){//发送notice
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,

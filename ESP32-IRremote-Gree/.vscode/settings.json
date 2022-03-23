@@ -11,5 +11,6 @@
   },
   "idf.flashType": "UART",
   "idf.port": "/dev/ttyUSB0",
-  "idf.portWin": "COM15"
+  "idf.portWin": "COM15",
+  "cmake.configureOnOpen": true
 }
