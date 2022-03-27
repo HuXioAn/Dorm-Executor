@@ -33,6 +33,8 @@ WIFI优先级高于BLE，因为BLE的创建总是可行的，所以在BLE模式�
 
 static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 QueueHandle_t xQueue_Mode;
+esp_mqtt_client_handle_t mqtt_client;
+int fail_cause;
 
 void app_main(void)
 {
@@ -54,6 +56,9 @@ void mode_schedule_task(void *pvParameters)
             if (mode == COMM_MODE_BLE)
             {
                 //切换到BLE模式，首先为WIFI，MQTT收拾残局，再开启BLE初始化
+                wifi_deinit_sta();
+                mqtt_app_stop();
+
             }
             else if (mode == COMM_MODE_WIFI)
             {
@@ -126,7 +131,8 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
             ESP_LOGI(TAG, "retry to connect to the AP");
         }
         else
-        {//重连次数到达上限，准备切换蓝牙
+        {//重连次数到达上限，准备切换蓝牙,但要注意，在已连接过程中的断开同样会触发MQTT的断开事件，要区分两者
+            fail_cause=1;
             COMM_MODE to_ble=COMM_MODE_BLE;
             xQueueSend(xQueue_Mode,&to_ble,100/portTICK_PERIOD_MS);
         }
@@ -160,8 +166,34 @@ static void mqtt_app_start(void)
         .password = IRremote_MQTT_PWD,
 
     };
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
 }
+
+
+static void mqtt_app_stop(void){
+    ESP_ERROR_CHECK(esp_mqtt_client_disconnect(mqtt_client));
+    ESP_ERROR_CHECK(esp_mqtt_client_stop(mqtt_client));
+    //？？？没有unregister event handler
+    ESP_ERROR_CHECK(esp_mqtt_client_destroy(mqtt_client));
+    fail_cause=0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
