@@ -1,6 +1,7 @@
 {
   "C_Cpp.intelliSenseEngine": "Tag Parser",
   "files.associations": {
-    "stdint.h": "c"
+    "stdint.h": "c",
+    "queue.h": "c"
   }
 }

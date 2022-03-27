@@ -7,7 +7,6 @@
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_netif.h"
-#include "protocol_examples_common.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -26,10 +25,13 @@
 #include "gree.h"
 #include "comm_schedule.h"
 
+static const char *TAG = "IRremote";
+
 /*
 整合WIFI+MQTT与BLE两种通信方式，并可在运行时禁用、启用其中一个或者两个。
 WIFI优先级高于BLE，因为BLE的创建总是可行的，所以在BLE模式下会定期检查WIFI是否可用，如可用，立即切换。
 */
+
 
 static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
@@ -61,7 +63,7 @@ void mode_schedule_task(void *pvParameters)
                 mqtt_app_stop();
                 fail_cause=0;
                 //WiFi、mqtt清理完毕，下面开启蓝牙
-                
+
 
 
             }
@@ -236,7 +238,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-static void mqtt_app_start(void)
+void mqtt_app_start(void)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
         .uri = IRremote_MQTT_URI,
@@ -251,7 +253,7 @@ static void mqtt_app_start(void)
 }
 
 
-static void mqtt_app_stop(void){
+void mqtt_app_stop(void){
     ESP_ERROR_CHECK(esp_mqtt_client_disconnect(mqtt_client));
     ESP_ERROR_CHECK(esp_mqtt_client_stop(mqtt_client));
     //？？？没有unregister event handler
