@@ -53,11 +53,13 @@ void mode_schedule_task(void *pvParameters)
         {
             if (mode == COMM_MODE_BLE)
             {
-                //切换到BLE模式，首先为WIFI收拾残局，再开启BLE初始化
+                //切换到BLE模式，首先为WIFI，MQTT收拾残局，再开启BLE初始化
             }
             else if (mode == COMM_MODE_WIFI)
             {
                 //同理，关闭BLE，开启WiFi
+            }else if(mode == COMM_MODE_MQTT){
+                //WIFI连接成功，获得IP，开启mqtt
             }
             else
             {
@@ -125,9 +127,10 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
         }
         else
         {//重连次数到达上限，准备切换蓝牙
-           
+            COMM_MODE to_ble=COMM_MODE_BLE;
+            xQueueSend(xQueue_Mode,&to_ble,100/portTICK_PERIOD_MS);
         }
-        ESP_LOGI(TAG, "connect to the AP fail");
+        
     }
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
@@ -135,10 +138,30 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
+        COMM_MODE to_ble=COMM_MODE_MQTT;//开启MQTT
+        xQueueSend(xQueue_Mode,&to_ble,100/portTICK_PERIOD_MS);
         
     }
 }
 
 void wifi_deinit_sta(void)
 {
+    ESP_ERROR_CHECK(esp_wifi_disconnect());
+    ESP_ERROR_CHECK(esp_wifi_stop());
+    ESP_ERROR_CHECK(esp_wifi_deinit());
+}
+
+
+static void mqtt_app_start(void)
+{
+    esp_mqtt_client_config_t mqtt_cfg = {
+        .uri = CONFIG_BROKER_URL,
+        .username = IRremote_MQTT_USR,
+        .password = IRremote_MQTT_PWD,
+
+    };
+    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
+    esp_mqtt_client_start(client);
 }
