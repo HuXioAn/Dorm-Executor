@@ -32,8 +32,9 @@ WIFI优先级高于BLE，因为BLE的创建总是可行的，所以在BLE模式�
 */
 
 static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
 QueueHandle_t xQueue_Mode;
-esp_mqtt_client_handle_t mqtt_client;
+static esp_mqtt_client_handle_t mqtt_client;
 int fail_cause;
 
 void app_main(void)
@@ -58,6 +59,9 @@ void mode_schedule_task(void *pvParameters)
                 //切换到BLE模式，首先为WIFI，MQTT收拾残局，再开启BLE初始化
                 wifi_deinit_sta();
                 mqtt_app_stop();
+                fail_cause=0;
+
+
 
             }
             else if (mode == COMM_MODE_WIFI)
@@ -65,6 +69,7 @@ void mode_schedule_task(void *pvParameters)
                 //同理，关闭BLE，开启WiFi
             }else if(mode == COMM_MODE_MQTT){
                 //WIFI连接成功，获得IP，开启mqtt
+                
             }
             else
             {
@@ -124,6 +129,7 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     { //断开事件,会在连接失败和因意外断开时发生
       //在本应用中不会主动断开，所以发生事件就要重连
+        fail_cause=1;
         if (s_retry_num < WIFI_MAX_RETRY)
         {
             esp_wifi_connect();
@@ -132,9 +138,11 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
         }
         else
         {//重连次数到达上限，准备切换蓝牙,但要注意，在已连接过程中的断开同样会触发MQTT的断开事件，要区分两者
-            fail_cause=1;
+            
             COMM_MODE to_ble=COMM_MODE_BLE;
+            
             xQueueSend(xQueue_Mode,&to_ble,100/portTICK_PERIOD_MS);
+            
         }
         
     }
@@ -158,18 +166,87 @@ void wifi_deinit_sta(void)
 }
 
 
+static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+{   
+    static int s_retry_num=0;
+    //ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
+    esp_mqtt_event_handle_t event = event_data;
+    esp_mqtt_client_handle_t client = event->client;
+    int msg_id;
+    switch ((esp_mqtt_event_id_t)event_id) {
+    case MQTT_EVENT_CONNECTED:
+        ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+
+        msg_id = esp_mqtt_client_subscribe(client,"ac",0);
+        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        s_retry_num=0;//重试次数清零
+        break;
+    case MQTT_EVENT_DISCONNECTED:
+        //当WiFi断开，MQTT断开时都会触发此事件，所以加入原因标志来防止重复向队列发送
+        ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+
+        if (s_retry_num < MQTT_MAX_RETRY)
+        {
+            esp_mqtt_client_reconnect(mqtt_client);
+            s_retry_num++;
+            ESP_LOGI(TAG, "retry to connect to the MQTT Broker");
+        }
+        else
+        {
+            if(!fail_cause){//如果错误的原因不是来自WIFI
+            COMM_MODE to_ble=COMM_MODE_BLE;
+            xQueueSend(xQueue_Mode,&to_ble,100/portTICK_PERIOD_MS);
+            }
+        }
+        
+        break;
+    case MQTT_EVENT_SUBSCRIBED:
+        ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        break;
+    case MQTT_EVENT_UNSUBSCRIBED:
+        ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+        break;
+    case MQTT_EVENT_PUBLISHED:
+        ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+        break;
+    case MQTT_EVENT_DATA:
+        ESP_LOGI(TAG, "MQTT_EVENT_DATA");
+        //printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        //printf("DATA=%.*s\r\n", event->data_len, event->data);
+        if((event->topic)[0]=='a'&&(event->topic)[1]=='c'){
+            //修改为任务
+            ESP_LOGI(TAG,"GREE CONTROL!");
+            remote_control(event->data);
+        }
+        break;
+    case MQTT_EVENT_ERROR:
+        ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
+        if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
+            log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
+            log_error_if_nonzero("reported from tls stack", event->error_handle->esp_tls_stack_err);
+            log_error_if_nonzero("captured as transport's socket errno",  event->error_handle->esp_transport_sock_errno);
+            ESP_LOGI(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
+
+        }
+        break;
+    default:
+        ESP_LOGI(TAG, "Other event id:%d", event->event_id);
+        break;
+    }
+}
+
 static void mqtt_app_start(void)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = CONFIG_BROKER_URL,
+        .uri = IRremote_MQTT_URI,
         .username = IRremote_MQTT_USR,
         .password = IRremote_MQTT_PWD,
 
     };
     mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
-    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
-    esp_mqtt_client_start(client);
+    esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
+    esp_mqtt_client_start(mqtt_client);
 }
 
 
@@ -178,7 +255,7 @@ static void mqtt_app_stop(void){
     ESP_ERROR_CHECK(esp_mqtt_client_stop(mqtt_client));
     //？？？没有unregister event handler
     ESP_ERROR_CHECK(esp_mqtt_client_destroy(mqtt_client));
-    fail_cause=0;
+    
 }
 
 

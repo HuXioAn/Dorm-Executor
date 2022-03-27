@@ -4,6 +4,8 @@
 
 #define IRremote_WIFI_SSID "the_ssid"
 #define IRremote_WIFI_PASS "the_pwd"
+
+#define IRremote_MQTT_URI "URI"
 #define IRremote_MQTT_USR "the username"
 #define IRremote_MQTT_PWD "the password"
 
