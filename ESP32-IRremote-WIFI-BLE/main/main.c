@@ -60,7 +60,8 @@ void mode_schedule_task(void *pvParameters)
                 wifi_deinit_sta();
                 mqtt_app_stop();
                 fail_cause=0;
-
+                //WiFi、mqtt清理完毕，下面开启蓝牙
+                
 
 
             }
@@ -69,7 +70,7 @@ void mode_schedule_task(void *pvParameters)
                 //同理，关闭BLE，开启WiFi
             }else if(mode == COMM_MODE_MQTT){
                 //WIFI连接成功，获得IP，开启mqtt
-                
+                mqtt_app_start();
             }
             else
             {
