@@ -17,6 +17,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
+#include "freertos/timers.h"
 
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
@@ -38,16 +39,59 @@ WIFI优先级高于BLE，因为BLE的创建总是可行的，所以在BLE模式�
 
 static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
+static void vTimerCallback_wifi_checker(TimerHandle_t xTimer);
+
+
 QueueHandle_t xQueue_Mode;
 QueueHandle_t xQueue_IRremote;
+TimerHandle_t xTimer_wifi_check;
 static esp_mqtt_client_handle_t mqtt_client;
+
+
 int fail_cause;
 
 void app_main(void)
-{
+{   BaseType_t xReturned;
     xQueue_Mode = xQueueCreate(5, sizeof(COMM_MODE));
+    
     xQueue_IRremote = xQueueCreate(5, 20 * sizeof(char));
-        ESP_ERROR_CHECK(nvs_flash_init());
+
+    xTimer_wifi_check = xTimerCreate("WIFI_CHECKER",
+                                    BLE_CHECK_WIFI_IN_MS/portTICK_PERIOD_MS,
+                                    pdTRUE,
+                                    (void*)0,
+                                    vTimerCallback_wifi_checker);
+
+    if(xQueue_Mode == NULL || xQueue_IRremote==NULL || xTimer_wifi_check==NULL){
+        ESP_LOGE(TAG,"ERROR Creating basic queue or timer.");
+        abort();
+    }
+
+    
+
+    xReturned = xTaskCreate(
+        vTask_IRremote_control,
+        "IRremote_control",
+        1024,
+        NULL,
+        5,
+        NULL
+    );//遥控任务
+    if(pdFALSE == xReturned)abort();
+
+    xReturned = xTaskCreate(
+        mode_schedule_task,
+        "COMM_control",
+        4096,
+        NULL,
+        4,
+        NULL
+    );//模式管理任务
+    if(pdFALSE == xReturned)abort();
+    
+
+
+    ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
@@ -287,3 +331,16 @@ void vTask_IRremote_control(void *pvParameters)
         }
     }
 }
+
+static void vTimerCallback_wifi_checker(TimerHandle_t xTimer){
+    //在BLE模式下，软件定时器将会周期触发，调用此函数，进入WiFi模式检查是否可用
+    //如果可用，软件定时器将会被停止
+    COMM_MODE to_wifi = COMM_MODE_WIFI;
+    xQueueSend(xQueue_Mode, &to_wifi, 0);
+    //定时器回调不能被阻塞
+
+}
+
+
+
+

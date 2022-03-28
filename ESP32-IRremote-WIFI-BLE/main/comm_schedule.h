@@ -11,6 +11,7 @@
 #define WIFI_MAX_RETRY 3
 #define MQTT_MAX_RETRY 3
 #define BLE_CHECK_WIFI_IN_SECONDS 60 //在BLE模式下，检查WiFi可用的时间间隔
+#define BLE_CHECK_WIFI_IN_MS (BLE_CHECK_WIFI_IN_SECONDS*1000)
 
 typedef enum
 {
@@ -24,4 +25,6 @@ void wifi_deinit_sta(void);
 void mqtt_app_start(void);
 void mqtt_app_stop(void);
 
+void vTask_IRremote_control(void *pvParameters);
+void mode_schedule_task(void *pvParameters);
 #endif

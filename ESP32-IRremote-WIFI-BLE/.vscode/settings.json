@@ -4,7 +4,11 @@
     "stdint.h": "c",
     "queue.h": "c",
     "esp_bt.h": "c",
-    "esp_gap_ble_api.h": "c"
+    "esp_gap_ble_api.h": "c",
+    "event_groups.h": "c",
+    "timers.h": "c",
+    "complex": "c",
+    "freertos.h": "c"
   },
   "idf.adapterTargetName": "esp32"
 }
