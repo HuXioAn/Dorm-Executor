@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+
+#include "sdkconfig.h"
+#include "ble.h"
+
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
@@ -36,12 +40,14 @@ WIFI优先级高于BLE，因为BLE的创建总是可行的，所以在BLE模式�
 static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
 QueueHandle_t xQueue_Mode;
+QueueHandle_t xQueue_IRremote;
 static esp_mqtt_client_handle_t mqtt_client;
 int fail_cause;
 
 void app_main(void)
 {
     xQueue_Mode = xQueueCreate(5, sizeof(COMM_MODE));
+    xQueue_IRremote = xQueueCreate(5,20*sizeof(char))
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -169,6 +175,15 @@ void wifi_deinit_sta(void)
 }
 
 
+
+static void log_error_if_nonzero(const char *message, int error_code)
+{
+    if (error_code != 0) {
+        ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
+    }
+}
+
+
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {   
     static int s_retry_num=0;
@@ -219,7 +234,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         if((event->topic)[0]=='a'&&(event->topic)[1]=='c'){
             //修改为任务
             ESP_LOGI(TAG,"GREE CONTROL!");
-            remote_control(event->data);
+            xQueueSend(xQueue_IRremote,event->data,100/portTICK_PERIOD_MS);
         }
         break;
     case MQTT_EVENT_ERROR:
@@ -259,6 +274,18 @@ void mqtt_app_stop(void){
     //？？？没有unregister event handler
     ESP_ERROR_CHECK(esp_mqtt_client_destroy(mqtt_client));
     
+}
+
+
+
+void vTask_IRremote_control(void * pvParameters){
+    
+    char gree_cmd[25];
+    while(1){
+        if(pdTRUE==xQueueReceive(xQueue_IRremote,gree_cmd,portMAX_DELAY)){
+        remote_control(gree_cmd);
+        }
+    }
 }
 
 

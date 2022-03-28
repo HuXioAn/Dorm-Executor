@@ -3,5 +3,6 @@
   "files.associations": {
     "stdint.h": "c",
     "queue.h": "c"
-  }
+  },
+  "idf.adapterTargetName": "esp32"
 }
