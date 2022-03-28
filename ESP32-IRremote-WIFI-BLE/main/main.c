@@ -201,7 +201,7 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
         }
         else
         { //重连次数到达上限，准备切换蓝牙,但要注意，在已连接过程中的断开同样会触发MQTT的断开事件，要区分两者
-            
+            s_retry_num=0;
             COMM_MODE to_ble = COMM_MODE_BLE;
             xQueueSend(xQueue_Mode, &to_ble, 100 / portTICK_PERIOD_MS);
         }
