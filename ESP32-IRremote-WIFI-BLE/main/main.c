@@ -46,7 +46,7 @@ int fail_cause;
 void app_main(void)
 {
     xQueue_Mode = xQueueCreate(5, sizeof(COMM_MODE));
-    xQueue_IRremote = xQueueCreate(5, 20 * sizeof(char))
+    xQueue_IRremote = xQueueCreate(5, 20 * sizeof(char));
         ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -73,6 +73,9 @@ void mode_schedule_task(void *pvParameters)
             else if (mode == COMM_MODE_WIFI)
             {
                 //同理，关闭BLE，开启WiFi
+                ble_deinit();
+
+                wifi_init_sta();
             }
             else if (mode == COMM_MODE_MQTT)
             {

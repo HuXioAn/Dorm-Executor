@@ -2,7 +2,9 @@
   "C_Cpp.intelliSenseEngine": "Tag Parser",
   "files.associations": {
     "stdint.h": "c",
-    "queue.h": "c"
+    "queue.h": "c",
+    "esp_bt.h": "c",
+    "esp_gap_ble_api.h": "c"
   },
   "idf.adapterTargetName": "esp32"
 }

@@ -671,3 +671,41 @@ void ble_init(void)
 
     return;
 }
+
+
+void ble_deinit(void){
+    esp_err_t ret;
+    ret = esp_bluedroid_disable();
+    if (ret)
+    {
+        ESP_LOGE(GATTS_TAG, "%s disable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        return;
+    }
+
+    ret = esp_bluedroid_deinit();
+    if (ret)
+    {
+        ESP_LOGE(GATTS_TAG, "%s deinit bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        return;
+    }
+
+    ret = esp_bt_controller_disable();
+    if (ret)
+    {
+        ESP_LOGE(GATTS_TAG, "%s disable bt controller failed: %s\n", __func__, esp_err_to_name(ret));
+        return;
+    }
+
+    ret = esp_bt_controller_deinit();
+    if (ret)
+    {
+        ESP_LOGE(GATTS_TAG, "%s deinit bt controller failed: %s\n", __func__, esp_err_to_name(ret));
+        return;
+    }
+
+
+
+}
+
+
+
