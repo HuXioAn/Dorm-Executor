@@ -47,6 +47,8 @@ QueueHandle_t xQueue_IRremote;
 TimerHandle_t xTimer_wifi_check;
 static esp_mqtt_client_handle_t mqtt_client;
 
+esp_netif_t * wifi_netif_pointer;
+
 
 int fail_cause;
 
@@ -107,22 +109,25 @@ void mode_schedule_task(void *pvParameters)
         {
             if (mode == COMM_MODE_BLE)
             {
+                ESP_LOGI(TAG,"COMM_MODE_BLE!!!!!!!!!!!");
                 //切换到BLE模式，首先为WIFI，MQTT收拾残局，再开启BLE初始化
                 wifi_deinit_sta();
                 mqtt_app_stop();
                 fail_cause = 0;
                 // WiFi、mqtt清理完毕，下面开启蓝牙
                 ble_init();
+                xTimerStart(xTimer_wifi_check,100/portTICK_PERIOD_MS);//开启定时检查WIFI可用
             }
             else if (mode == COMM_MODE_WIFI)
             {
-                //同理，关闭BLE，开启WiFi
+                ESP_LOGI(TAG,"COMM_MODE_WIFI!!!!!!!!!!!");
+                //同理，关闭BLE，开启WiFi，关闭WIFI检查定时器
                 ble_deinit();
-
                 wifi_init_sta();
             }
             else if (mode == COMM_MODE_MQTT)
             {
+                ESP_LOGI(TAG,"COMM_MODE_MQTT!!!!!!!!!!!");
                 // WIFI连接成功，获得IP，开启mqtt
                 mqtt_app_start();
             }
@@ -137,7 +142,7 @@ void mode_schedule_task(void *pvParameters)
 void wifi_init_sta(void)
 {
 
-    esp_netif_create_default_wifi_sta();
+    wifi_netif_pointer=esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -176,10 +181,13 @@ void wifi_init_sta(void)
 static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     static int s_retry_num = 0;
-
+    esp_err_t ret;
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     { //协议栈开启
-        esp_wifi_connect();
+        ret=esp_wifi_connect();
+        if(ret!=ESP_OK){
+            ESP_LOGE(TAG, "%s wifi connect failed: %s\n", __func__, esp_err_to_name(ret));
+        }
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     { //断开事件,会在连接失败和因意外断开时发生
@@ -193,9 +201,8 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
         }
         else
         { //重连次数到达上限，准备切换蓝牙,但要注意，在已连接过程中的断开同样会触发MQTT的断开事件，要区分两者
-
+            
             COMM_MODE to_ble = COMM_MODE_BLE;
-
             xQueueSend(xQueue_Mode, &to_ble, 100 / portTICK_PERIOD_MS);
         }
     }
@@ -215,6 +222,7 @@ void wifi_deinit_sta(void)
     ESP_ERROR_CHECK(esp_wifi_disconnect());
     ESP_ERROR_CHECK(esp_wifi_stop());
     ESP_ERROR_CHECK(esp_wifi_deinit());
+    esp_netif_destroy_default_wifi((void*)wifi_netif_pointer);
 }
 
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -313,10 +321,12 @@ void mqtt_app_start(void)
 
 void mqtt_app_stop(void)
 {
+    if(!mqtt_client)return;
     ESP_ERROR_CHECK(esp_mqtt_client_disconnect(mqtt_client));
     ESP_ERROR_CHECK(esp_mqtt_client_stop(mqtt_client));
     //？？？没有unregister event handler
     ESP_ERROR_CHECK(esp_mqtt_client_destroy(mqtt_client));
+    mqtt_client=NULL;
 }
 
 void vTask_IRremote_control(void *pvParameters)
@@ -338,7 +348,7 @@ static void vTimerCallback_wifi_checker(TimerHandle_t xTimer){
     COMM_MODE to_wifi = COMM_MODE_WIFI;
     xQueueSend(xQueue_Mode, &to_wifi, 0);
     //定时器回调不能被阻塞
-
+    xTimerStop(xTimer_wifi_check,0);
 }
 
 

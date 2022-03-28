@@ -604,6 +604,8 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 
 void ble_init(void)
 {
+    static uint8_t bt_release;
+
     esp_err_t ret;
 
     // Initialize NVS.
@@ -614,9 +616,11 @@ void ble_init(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
+    if(!bt_release){
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
-
+    //不可逆的释放过程，大约70k，不能被多次调用。
+    bt_release=1;
+    }
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret)
@@ -668,6 +672,8 @@ void ble_init(void)
     {
         ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
+
+
 
     return;
 }

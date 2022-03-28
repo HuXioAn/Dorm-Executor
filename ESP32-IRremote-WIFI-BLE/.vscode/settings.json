@@ -10,5 +10,7 @@
     "complex": "c",
     "freertos.h": "c"
   },
-  "idf.adapterTargetName": "esp32"
+  "idf.adapterTargetName": "esp32",
+  "idf.portWin": "COM15",
+  "idf.flashType": "UART"
 }
