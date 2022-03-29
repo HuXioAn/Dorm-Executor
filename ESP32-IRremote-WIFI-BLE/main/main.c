@@ -144,16 +144,10 @@ void mode_schedule_task(void *pvParameters)
 void wifi_init_sta(void)
 {
     
-
     wifi_netif_pointer=esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
-    //esp_event_handler_instance_t instance_any_id;
-    //esp_event_handler_instance_t instance_got_ip;
-
-
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                         ESP_EVENT_ANY_ID,
@@ -182,9 +176,7 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
-    //ESP_LOGE(TAG,"wifi init !!!!!!!!!!!!!!!!!!!!!!!!");
-    //仅执行一次，但是有多个start事件
-
+    
     ESP_LOGI(TAG, "wifi_init_sta finished.");
 }
 
@@ -199,7 +191,7 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
         if(ret!=ESP_OK){
             ESP_LOGE(TAG, "%s wifi connect failed: %s\n", __func__, esp_err_to_name(ret));
         }
-        s_retry_num=0;
+        s_retry_num=0;//清零需要放这里，断开时也会触发DISCONNECT事件
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     { //断开事件,会在连接失败和因意外断开时发生
@@ -234,10 +226,6 @@ void wifi_deinit_sta(void)
     esp_err_t ret;
     ESP_ERROR_CHECK(esp_wifi_disconnect());
     ESP_ERROR_CHECK(esp_wifi_stop());
-
-    
-
-
     ESP_ERROR_CHECK(esp_wifi_deinit());
     esp_netif_destroy_default_wifi((void*)wifi_netif_pointer);
     
@@ -252,7 +240,7 @@ void wifi_deinit_sta(void)
         }
 
 
-    //ESP_ERROR_CHECK(esp_netif_deinit());
+    
      
 
 }
