@@ -30,6 +30,8 @@
 #include "gree.h"
 #include "comm_schedule.h"
 
+#define WIFI_HOSTNAME "ESP32-IRremote"
+
 static const char *TAG = "IRremote";
 
 /*
@@ -98,8 +100,9 @@ void app_main(void)
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-
+    
     wifi_init_sta();
+    esp_netif_set_hostname(wifi_netif_pointer,WIFI_HOSTNAME);
 }
 
 void mode_schedule_task(void *pvParameters)
@@ -270,7 +273,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         s_retry_num = 0; //重试次数清零
         break;
     case MQTT_EVENT_DISCONNECTED:
-        //当WiFi断开，MQTT断开时都会触发此事件，所以加入原因标志来防止重复向队列发送
+        //当WiFi断开，MQTT断开\MQTT连接失败时都会触发此事件，所以加入原因标志来防止重复向队列发送
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
 
         if (s_retry_num < MQTT_MAX_RETRY)
