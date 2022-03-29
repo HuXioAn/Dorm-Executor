@@ -10,7 +10,7 @@
 
 #define WIFI_MAX_RETRY 3
 #define MQTT_MAX_RETRY 3
-#define BLE_CHECK_WIFI_IN_SECONDS 30 //在BLE模式下，检查WiFi可用的时间间隔
+#define BLE_CHECK_WIFI_IN_SECONDS 5 //在BLE模式下，检查WiFi可用的时间间隔
 #define BLE_CHECK_WIFI_IN_MS (BLE_CHECK_WIFI_IN_SECONDS*1000)
 
 typedef enum

@@ -8,7 +8,9 @@
     "event_groups.h": "c",
     "timers.h": "c",
     "complex": "c",
-    "freertos.h": "c"
+    "freertos.h": "c",
+    "esp_event.h": "c",
+    "esp_event_base.h": "c"
   },
   "idf.adapterTargetName": "esp32",
   "idf.portWin": "COM15",

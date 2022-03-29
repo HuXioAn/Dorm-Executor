@@ -48,6 +48,8 @@ TimerHandle_t xTimer_wifi_check;
 static esp_mqtt_client_handle_t mqtt_client;
 
 esp_netif_t * wifi_netif_pointer;
+esp_event_handler_instance_t instance_any_id;
+esp_event_handler_instance_t instance_got_ip;
 
 
 int fail_cause;
@@ -84,7 +86,7 @@ void app_main(void)
     xReturned = xTaskCreate(
         mode_schedule_task,
         "COMM_control",
-        4096,
+        4096+1024,
         NULL,
         4,
         NULL
@@ -141,14 +143,18 @@ void mode_schedule_task(void *pvParameters)
 
 void wifi_init_sta(void)
 {
+    
 
     wifi_netif_pointer=esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    esp_event_handler_instance_t instance_any_id;
-    esp_event_handler_instance_t instance_got_ip;
+    //esp_event_handler_instance_t instance_any_id;
+    //esp_event_handler_instance_t instance_got_ip;
+
+
+
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                         ESP_EVENT_ANY_ID,
                                                         &WIFI_STA_event_handler,
@@ -159,6 +165,8 @@ void wifi_init_sta(void)
                                                         &WIFI_STA_event_handler,
                                                         NULL,
                                                         &instance_got_ip));
+
+
 
     wifi_config_t wifi_config = {
         .sta = {
@@ -174,12 +182,15 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+    //ESP_LOGE(TAG,"wifi init !!!!!!!!!!!!!!!!!!!!!!!!");
+    //仅执行一次，但是有多个start事件
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
 }
 
 static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
+    ESP_LOGI(TAG,"base:%s,id:%d",event_base,event_id);
     static int s_retry_num = 0;
     esp_err_t ret;
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
@@ -188,6 +199,7 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
         if(ret!=ESP_OK){
             ESP_LOGE(TAG, "%s wifi connect failed: %s\n", __func__, esp_err_to_name(ret));
         }
+        s_retry_num=0;
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     { //断开事件,会在连接失败和因意外断开时发生
@@ -201,7 +213,7 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
         }
         else
         { //重连次数到达上限，准备切换蓝牙,但要注意，在已连接过程中的断开同样会触发MQTT的断开事件，要区分两者
-            s_retry_num=0;
+            
             COMM_MODE to_ble = COMM_MODE_BLE;
             xQueueSend(xQueue_Mode, &to_ble, 100 / portTICK_PERIOD_MS);
         }
@@ -219,10 +231,30 @@ static void WIFI_STA_event_handler(void *arg, esp_event_base_t event_base, int32
 
 void wifi_deinit_sta(void)
 {
+    esp_err_t ret;
     ESP_ERROR_CHECK(esp_wifi_disconnect());
     ESP_ERROR_CHECK(esp_wifi_stop());
+
+    
+
+
     ESP_ERROR_CHECK(esp_wifi_deinit());
     esp_netif_destroy_default_wifi((void*)wifi_netif_pointer);
+    
+    
+    ret=esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, instance_got_ip);
+     if(ret!=ESP_OK){
+            ESP_LOGE(TAG, "%s wifi unregister failed: %s\n", __func__, esp_err_to_name(ret));
+        }
+    ret=esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, instance_any_id);
+    if(ret!=ESP_OK){
+            ESP_LOGE(TAG, "%s wifi unregister failed: %s\n", __func__, esp_err_to_name(ret));
+        }
+
+
+    //ESP_ERROR_CHECK(esp_netif_deinit());
+     
+
 }
 
 static void log_error_if_nonzero(const char *message, int error_code)
