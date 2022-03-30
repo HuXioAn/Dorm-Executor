@@ -78,7 +78,7 @@ void app_main(void)
     xReturned = xTaskCreate(
         vTask_IRremote_control,
         "IRremote_control",
-        1024,
+        2048,
         NULL,
         5,
         NULL
