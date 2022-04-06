@@ -1,3 +1,10 @@
+/*
+作者：胡小安
+GitHub：https://github.com/HuXioAn
+仓库地址：https://github.com/HuXioAn/Dorm-Executor
+
+*/
+
 #ifndef _H_GREE_
 #define _H_GREE_
 
@@ -29,11 +36,13 @@ typedef enum AC_MODE_S
     GREE_AC_MODE_HEAT
 } AC_MODE_T;
 
-int generate_gree_item(uint8_t cmd[], rmt_item32_t **items, uint8_t invert);
+
+
+void generate_gree_cmd(uint8_t *cmd, uint8_t temp, int power, AC_MODE_T mode);
 
 void level_implement(uint8_t level, rmt_item32_t *item, uint8_t invert);
 
-void generate_gree_cmd(uint8_t *cmd, uint8_t temp, int power, AC_MODE_T mode);
+int generate_gree_item(uint8_t cmd[], rmt_item32_t **items, uint8_t invert);
 
 void send_gree(uint8_t temp, int power, AC_MODE_T mode);
 

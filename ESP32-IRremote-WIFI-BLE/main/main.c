@@ -1,3 +1,10 @@
+/*
+作者：胡小安
+GitHub：https://github.com/HuXioAn
+仓库地址：https://github.com/HuXioAn/Dorm-Executor
+
+*/
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -30,7 +37,7 @@
 #include "gree.h"
 #include "comm_schedule.h"
 
-#define WIFI_HOSTNAME "ESP32-IRremote"
+
 
 static const char *TAG = "IRremote";
 
