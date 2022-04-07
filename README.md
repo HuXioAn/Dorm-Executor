@@ -118,9 +118,11 @@ MQTT相关函数都实现在了`main.c`，并没有单独出来，头文件`comm
 
 上述的行为主要由任务函数`mode_schedule_task`配合一个软件定时器、一个消息队列以及WIFI\MQTT\BLE事件处理回调的部分逻辑组成。
 
+![Dorm-Executor-schedule](pic/Dorm-Executor-schedule-16492517522712.png)
 
+大致流程图如上。
 
-
+有一处没有在图中说明的是，因为在发生意外时，WIFI、MQTT事件处理回调都可能在运行，类似WiFi断开的事件同样会引起MQTT的断开，如果两者在尝试重连之后都向调度任务发送切换到BLE模式的队列消息，会引发错误，实际程序使用标志保证两者不会重复发送。
 
 ## <a name="user-interface">用户控制方案</a>
 
